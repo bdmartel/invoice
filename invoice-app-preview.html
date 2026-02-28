@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice Manager — Ben Martel</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
     <style>
         :root {
             --bg: #faf8f5;
@@ -341,7 +342,7 @@
 <header>
     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">Personal invoicing app by Ben Martel</p>
     <h1>Ben Martel</h1>
-    <button onclick="openSettings()">&#9881; Settings</button>
+    <!-- settings hidden -->
 </header>
 
 <div class="container">
@@ -390,10 +391,9 @@
         </div>
     </div>
 
-    <button class="btn-primary" id="sendBtn" onclick="sendInvoice()">
-        Generate & Send Invoice
+    <button class="btn-primary" id="downloadBtn" onclick="downloadPDF()">
+        Download Invoice PDF
     </button>
-    <button class="btn-secondary" onclick="downloadOnly()">Download PDF only (don't send)</button>
 
     <div class="card" style="margin-top: 2rem;">
         <h2>Recent Invoices</h2>
@@ -417,25 +417,7 @@
     </div>
 </div>
 
-<!-- Settings Modal -->
-<div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-        <h2>Gmail Settings</h2>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
-            You need a <a href="https://myaccount.google.com/apppasswords" target="_blank">Google App Password</a> to send emails. 2FA must be enabled.
-        </p>
-        <div class="field">
-            <label>Gmail Address</label>
-            <input id="settingsEmail" type="email" placeholder="you@gmail.com">
-        </div>
-        <div class="field">
-            <label>App Password</label>
-            <input id="settingsPassword" type="password" placeholder="xxxx xxxx xxxx xxxx">
-        </div>
-        <button class="btn-primary" onclick="saveSettings()">Save</button>
-        <button class="btn-secondary" onclick="closeSettings()" style="border:none; color:var(--text-muted);">Cancel</button>
-    </div>
-</div>
+<!-- Settings Modal (hidden) -->
 
 <div class="toast" id="toast"></div>
 
@@ -506,32 +488,166 @@
         document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
     }
 
-    function sendInvoice() {
-        const btn = document.getElementById('sendBtn');
+    function getInvoiceData() {
+        const sel = document.getElementById('recipientSelect');
+        let recipientName = '', recipientEmail = '';
+        if (sel.value === '__new__') {
+            recipientName = document.getElementById('newRecipientName').value || 'Unknown';
+            recipientEmail = document.getElementById('newRecipientEmail').value || '';
+        } else if (sel.value !== '') {
+            recipientName = recipients[sel.value].name;
+            recipientEmail = recipients[sel.value].email;
+        }
+
+        const services = [];
+        document.querySelectorAll('.service-row').forEach(function(row) {
+            const service = row.querySelector('[data-field="service"]').value;
+            const description = row.querySelector('[data-field="description"]').value;
+            const date = row.querySelector('[data-field="date"]').value;
+            const total = parseFloat(row.querySelector('[data-field="total"]').value) || 0;
+            if (service || total) services.push({ service, description, date, total });
+        });
+
+        let grandTotal = 0;
+        services.forEach(function(s) { grandTotal += s.total; });
+
+        return {
+            recipientName,
+            recipientEmail,
+            services,
+            grandTotal,
+            notes: document.getElementById('notes').value,
+            paid: document.getElementById('markPaid').checked,
+            invoiceNum: 'SB2026-' + (3 + Math.floor(Math.random() * 10)),
+            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        };
+    }
+
+    function downloadPDF() {
+        const data = getInvoiceData();
+        if (!data.recipientName) {
+            showToast('Please select a recipient', 'error');
+            return;
+        }
+        if (data.services.length === 0) {
+            showToast('Please add at least one line item', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('downloadBtn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Sending...';
+        btn.innerHTML = '<span class="spinner"></span> Generating...';
+
         setTimeout(function() {
-            showToast('✓ Invoice SB2026-3 sent to suenotton99@gmail.com', 'success');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const pageW = doc.internal.pageSize.getWidth();
+            let y = 28;
+
+            // Header
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(22);
+            doc.setTextColor(62, 39, 35);
+            doc.text('INVOICE', 20, y);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(107, 101, 96);
+            doc.text(data.invoiceNum, pageW - 20, y - 6, { align: 'right' });
+            doc.text(data.date, pageW - 20, y + 1, { align: 'right' });
+
+            y += 16;
+
+            // From
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(107, 101, 96);
+            doc.text('FROM', 20, y);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(26, 26, 26);
+            doc.text('Ben Martel', 20, y + 7);
+
+            // To
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(107, 101, 96);
+            doc.text('TO', 110, y);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(26, 26, 26);
+            doc.text(data.recipientName, 110, y + 7);
+            if (data.recipientEmail) {
+                doc.setFontSize(9);
+                doc.setTextColor(107, 101, 96);
+                doc.text(data.recipientEmail, 110, y + 14);
+            }
+
+            y += 30;
+
+            // Table header
+            doc.setDrawColor(232, 226, 219);
+            doc.setLineWidth(0.5);
+            doc.line(20, y, pageW - 20, y);
+            y += 7;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(107, 101, 96);
+            doc.text('SERVICE', 20, y);
+            doc.text('DESCRIPTION', 75, y);
+            doc.text('DATE', 130, y);
+            doc.text('AMOUNT', pageW - 20, y, { align: 'right' });
+
+            y += 4;
+            doc.line(20, y, pageW - 20, y);
+            y += 8;
+
+            // Table rows
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(26, 26, 26);
+            data.services.forEach(function(s) {
+                doc.text(s.service || '', 20, y);
+                doc.text(s.description || '', 75, y);
+                doc.text(s.date || '', 130, y);
+                doc.text('$' + s.total.toFixed(2), pageW - 20, y, { align: 'right' });
+                y += 9;
+            });
+
+            // Total
+            y += 4;
+            doc.line(20, y, pageW - 20, y);
+            y += 10;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text('Total:', 130, y);
+            doc.setTextColor(62, 39, 35);
+            doc.text('$' + data.grandTotal.toFixed(2), pageW - 20, y, { align: 'right' });
+
+            // Paid stamp
+            if (data.paid) {
+                y += 10;
+                doc.setFontSize(11);
+                doc.setTextColor(46, 125, 50);
+                doc.text('PAID', pageW - 20, y, { align: 'right' });
+            }
+
+            // Notes
+            if (data.notes) {
+                y += 18;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(107, 101, 96);
+                doc.text(data.notes, 20, y);
+            }
+
+            doc.save(data.invoiceNum + '.pdf');
+
             btn.disabled = false;
-            btn.innerHTML = 'Generate & Send Invoice';
-        }, 1500);
-    }
-
-    function downloadOnly() {
-        showToast('PDF preview would open in a new tab', 'success');
-    }
-
-    function openSettings() {
-        document.getElementById('settingsModal').classList.add('show');
-    }
-
-    function closeSettings() {
-        document.getElementById('settingsModal').classList.remove('show');
-    }
-
-    function saveSettings() {
-        showToast('Settings saved', 'success');
-        closeSettings();
+            btn.innerHTML = 'Download Invoice PDF';
+            showToast('Invoice ' + data.invoiceNum + ' downloaded', 'success');
+        }, 500);
     }
 
     function showToast(msg, type) {
