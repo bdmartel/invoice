@@ -602,114 +602,133 @@
         btn.innerHTML = '<span class="spinner"></span> Generating...';
 
         setTimeout(function() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const pageW = doc.internal.pageSize.getWidth();
-            let y = 28;
+            try {
+                if (!window.jspdf) {
+                    throw new Error('PDF library not loaded. Check your connection and try again.');
+                }
+                var jsPDFClass = window.jspdf.jsPDF;
+                var doc = new jsPDFClass();
+                var pageW = doc.internal.pageSize.getWidth();
+                var y = 28;
 
-            // Header
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(22);
-            doc.setTextColor(62, 39, 35);
-            doc.text('INVOICE', 20, y);
+                // Header
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(22);
+                doc.setTextColor(62, 39, 35);
+                doc.text('INVOICE', 20, y);
 
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(107, 101, 96);
-            doc.text(data.invoiceNum, pageW - 20, y - 6, { align: 'right' });
-            doc.text(data.date, pageW - 20, y + 1, { align: 'right' });
-
-            y += 16;
-
-            // From
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.setTextColor(107, 101, 96);
-            doc.text('FROM', 20, y);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.setTextColor(26, 26, 26);
-            doc.text('Ben Martel', 20, y + 7);
-
-            // To
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.setTextColor(107, 101, 96);
-            doc.text('TO', 110, y);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.setTextColor(26, 26, 26);
-            doc.text(data.recipientName, 110, y + 7);
-            if (data.recipientEmail) {
-                doc.setFontSize(9);
-                doc.setTextColor(107, 101, 96);
-                doc.text(data.recipientEmail, 110, y + 14);
-            }
-
-            y += 30;
-
-            // Table header
-            doc.setDrawColor(232, 226, 219);
-            doc.setLineWidth(0.5);
-            doc.line(20, y, pageW - 20, y);
-            y += 7;
-
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(8);
-            doc.setTextColor(107, 101, 96);
-            doc.text('SERVICE', 20, y);
-            doc.text('DESCRIPTION', 75, y);
-            doc.text('DATE', 130, y);
-            doc.text('AMOUNT', pageW - 20, y, { align: 'right' });
-
-            y += 4;
-            doc.line(20, y, pageW - 20, y);
-            y += 8;
-
-            // Table rows
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(26, 26, 26);
-            data.services.forEach(function(s) {
-                doc.text(s.service || '', 20, y);
-                doc.text(s.description || '', 75, y);
-                doc.text(s.date || '', 130, y);
-                doc.text('$' + s.total.toFixed(2), pageW - 20, y, { align: 'right' });
-                y += 9;
-            });
-
-            // Total
-            y += 4;
-            doc.line(20, y, pageW - 20, y);
-            y += 10;
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text('Total:', 130, y);
-            doc.setTextColor(62, 39, 35);
-            doc.text('$' + data.grandTotal.toFixed(2), pageW - 20, y, { align: 'right' });
-
-            // Paid stamp
-            if (data.paid) {
-                y += 10;
-                doc.setFontSize(11);
-                doc.setTextColor(46, 125, 50);
-                doc.text('PAID', pageW - 20, y, { align: 'right' });
-            }
-
-            // Notes
-            if (data.notes) {
-                y += 18;
                 doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(107, 101, 96);
+                doc.text(data.invoiceNum, pageW - 20, y - 6, { align: 'right' });
+                doc.text(data.date, pageW - 20, y + 1, { align: 'right' });
+
+                y += 16;
+
+                // From
+                doc.setFont('helvetica', 'bold');
                 doc.setFontSize(9);
                 doc.setTextColor(107, 101, 96);
-                doc.text(data.notes, 20, y);
+                doc.text('FROM', 20, y);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                doc.setTextColor(26, 26, 26);
+                doc.text('Ben Martel', 20, y + 7);
+
+                // To
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setTextColor(107, 101, 96);
+                doc.text('TO', 110, y);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                doc.setTextColor(26, 26, 26);
+                doc.text(data.recipientName, 110, y + 7);
+                if (data.recipientEmail) {
+                    doc.setFontSize(9);
+                    doc.setTextColor(107, 101, 96);
+                    doc.text(data.recipientEmail, 110, y + 14);
+                }
+
+                y += 30;
+
+                // Table header
+                doc.setDrawColor(232, 226, 219);
+                doc.setLineWidth(0.5);
+                doc.line(20, y, pageW - 20, y);
+                y += 7;
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(107, 101, 96);
+                doc.text('SERVICE', 20, y);
+                doc.text('DESCRIPTION', 75, y);
+                doc.text('DATE', 130, y);
+                doc.text('AMOUNT', pageW - 20, y, { align: 'right' });
+
+                y += 4;
+                doc.line(20, y, pageW - 20, y);
+                y += 8;
+
+                // Table rows
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(26, 26, 26);
+                data.services.forEach(function(s) {
+                    doc.text(s.service || '', 20, y);
+                    doc.text(s.description || '', 75, y);
+                    doc.text(s.date || '', 130, y);
+                    doc.text('$' + s.total.toFixed(2), pageW - 20, y, { align: 'right' });
+                    y += 9;
+                });
+
+                // Total
+                y += 4;
+                doc.line(20, y, pageW - 20, y);
+                y += 10;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('Total:', 130, y);
+                doc.setTextColor(62, 39, 35);
+                doc.text('$' + data.grandTotal.toFixed(2), pageW - 20, y, { align: 'right' });
+
+                // Paid stamp
+                if (data.paid) {
+                    y += 10;
+                    doc.setFontSize(11);
+                    doc.setTextColor(46, 125, 50);
+                    doc.text('PAID', pageW - 20, y, { align: 'right' });
+                }
+
+                // Notes
+                if (data.notes) {
+                    y += 18;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.setTextColor(107, 101, 96);
+                    doc.text(data.notes, 20, y);
+                }
+
+                // Open in new tab (works on iOS Safari)
+                var pdfBlob = doc.output('blob');
+                var url = URL.createObjectURL(pdfBlob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = data.invoiceNum + '.pdf';
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+
+                btn.disabled = false;
+                btn.innerHTML = 'Download Invoice PDF';
+                showToast('Invoice ' + data.invoiceNum + ' downloaded', 'success');
+            } catch (e) {
+                btn.disabled = false;
+                btn.innerHTML = 'Download Invoice PDF';
+                showToast('Error: ' + e.message, 'error');
             }
-
-            doc.save(data.invoiceNum + '.pdf');
-
-            btn.disabled = false;
-            btn.innerHTML = 'Download Invoice PDF';
-            showToast('Invoice ' + data.invoiceNum + ' downloaded', 'success');
         }, 500);
     }
 
