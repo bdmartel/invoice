@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Manager — Ben Martel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #faf8f5;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --text-muted: #6b6560;
+            --accent: #3E2723;
+            --accent-light: #5D4037;
+            --border: #e8e2db;
+            --success: #2e7d32;
+            --success-bg: #e8f5e9;
+            --error: #c62828;
+            --error-bg: #fce4ec;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+            --shadow-lg: 0 4px 24px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 2rem 2.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--card);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-weight: 500;
+            font-size: 1.6rem;
+            color: var(--accent);
+        }
+
+        header button {
+            background: none;
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        header button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text);
+            background: var(--bg);
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .field {
+            margin-bottom: 1rem;
+        }
+
+        .service-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1.2fr 1fr 36px;
+            gap: 0.75rem;
+            align-items: end;
+            margin-bottom: 0.75rem;
+        }
+
+        .service-row .remove-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            padding: 0.65rem 0;
+            transition: color 0.2s;
+        }
+
+        .service-row .remove-btn:hover { color: var(--error); }
+
+        .add-service {
+            background: none;
+            border: 1px dashed var(--border);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .add-service:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .checkbox-row label {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-primary:hover { background: var(--accent-light); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 0.75rem;
+            background: none;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.75rem;
+        }
+
+        .btn-secondary:hover { background: var(--accent); color: white; }
+
+        .total-display {
+            text-align: right;
+            padding: 1rem 0 0;
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .total-display span {
+            color: var(--accent);
+            font-size: 1.3rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 100;
+            transition: transform 0.3s ease;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: var(--success-bg); color: var(--success); }
+        .toast.error { background: var(--error-bg); color: var(--error); }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-item:last-child { border-bottom: none; }
+
+        .history-item .inv-num { font-weight: 600; font-size: 0.95rem; }
+        .history-item .inv-to { color: var(--text-muted); font-size: 0.85rem; }
+        .history-item .inv-amount { font-weight: 600; font-size: 1rem; }
+
+        .paid-badge {
+            font-size: 0.7rem;
+            background: var(--success-bg);
+            color: var(--success);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-left: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal h2 {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 1.25rem;
+            color: var(--text);
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .new-recipient-fields {
+            display: none;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed var(--border);
+        }
+
+        .new-recipient-fields.show { display: block; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Ben Martel</h1>
+    <button onclick="openSettings()">&#9881; Settings</button>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Recipient</h2>
+        <div class="field">
+            <label>Send to</label>
+            <select id="recipientSelect" onchange="onRecipientChange()">
+                <option value="">Select a recipient...</option>
+            </select>
+        </div>
+        <div id="newRecipientFields" class="new-recipient-fields">
+            <div class="row">
+                <div class="field">
+                    <label>Company / Name</label>
+                    <input id="newRecipientName" type="text" placeholder="e.g. Smith & Sons LLC">
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input id="newRecipientEmail" type="email" placeholder="email@example.com">
+                </div>
+            </div>
+        </div>
+        <div id="recipientEmail" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;"></div>
+    </div>
+
+    <div class="card">
+        <h2>Services</h2>
+        <div id="servicesContainer"></div>
+        <button class="add-service" onclick="addServiceRow()">+ Add line item</button>
+        <div class="total-display">
+            Total: <span id="grandTotal">$0.00</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Options</h2>
+        <div class="field">
+            <label>Notes</label>
+            <input id="notes" type="text" value="Thank you!">
+        </div>
+        <div class="checkbox-row">
+            <input type="checkbox" id="markPaid">
+            <label for="markPaid">Mark as paid</label>
+        </div>
+    </div>
+
+    <button class="btn-primary" id="sendBtn" onclick="sendInvoice()">
+        Generate & Send Invoice
+    </button>
+    <button class="btn-secondary" onclick="downloadOnly()">Download PDF only (don't send)</button>
+
+    <div class="card" style="margin-top: 2rem;">
+        <h2>Recent Invoices</h2>
+        <div id="historyList">
+            <div class="history-item">
+                <div>
+                    <span class="inv-num">SB2026-2</span>
+                    <br><span class="inv-to">7 Concord St LLC &middot; suenotton99@gmail.com</span>
+                </div>
+                <span class="inv-amount">$245.00</span>
+            </div>
+            <div class="history-item">
+                <div>
+                    <span class="inv-num">SB2026-1</span>
+                    <span class="paid-badge">Paid</span>
+                    <br><span class="inv-to">7 Concord St LLC &middot; suenotton99@gmail.com</span>
+                </div>
+                <span class="inv-amount">$70.00</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <h2>Gmail Settings</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+            You need a <a href="https://myaccount.google.com/apppasswords" target="_blank">Google App Password</a> to send emails. 2FA must be enabled.
+        </p>
+        <div class="field">
+            <label>Gmail Address</label>
+            <input id="settingsEmail" type="email" placeholder="you@gmail.com">
+        </div>
+        <div class="field">
+            <label>App Password</label>
+            <input id="settingsPassword" type="password" placeholder="xxxx xxxx xxxx xxxx">
+        </div>
+        <button class="btn-primary" onclick="saveSettings()">Save</button>
+        <button class="btn-secondary" onclick="closeSettings()" style="border:none; color:var(--text-muted);">Cancel</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    let recipients = [
+        { name: "7 Concord St LLC", email: "suenotton99@gmail.com" }
+    ];
+
+    function renderRecipients() {
+        const sel = document.getElementById('recipientSelect');
+        sel.innerHTML = '<option value="">Select a recipient...</option>';
+        recipients.forEach((r, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = r.name;
+            sel.appendChild(opt);
+        });
+        const newOpt = document.createElement('option');
+        newOpt.value = '__new__';
+        newOpt.textContent = '+ Add new recipient';
+        sel.appendChild(newOpt);
+    }
+
+    function onRecipientChange() {
+        const val = document.getElementById('recipientSelect').value;
+        const newFields = document.getElementById('newRecipientFields');
+        const emailDisplay = document.getElementById('recipientEmail');
+        if (val === '__new__') {
+            newFields.classList.add('show');
+            emailDisplay.textContent = '';
+        } else if (val !== '') {
+            newFields.classList.remove('show');
+            emailDisplay.textContent = recipients[val].email;
+        } else {
+            newFields.classList.remove('show');
+            emailDisplay.textContent = '';
+        }
+    }
+
+    let serviceCount = 0;
+
+    function addServiceRow() {
+        const container = document.getElementById('servicesContainer');
+        const id = serviceCount++;
+        const div = document.createElement('div');
+        div.className = 'service-row';
+        div.id = 'svc-' + id;
+        div.innerHTML =
+            '<div class="field"><label>Service</label><input type="text" placeholder="Snowblowing" data-field="service"></div>' +
+            '<div class="field"><label>Description</label><input type="text" placeholder="Optional" data-field="description"></div>' +
+            '<div class="field"><label>Date</label><input type="text" placeholder="2/21/26" data-field="date"></div>' +
+            '<div class="field"><label>Total ($)</label><input type="number" step="0.01" placeholder="35" data-field="total" oninput="calcTotal()"></div>' +
+            '<button class="remove-btn" onclick="removeService(' + id + ')">×</button>';
+        container.appendChild(div);
+    }
+
+    function removeService(id) {
+        const el = document.getElementById('svc-' + id);
+        if (el) el.remove();
+        calcTotal();
+    }
+
+    function calcTotal() {
+        let total = 0;
+        document.querySelectorAll('[data-field="total"]').forEach(function(inp) {
+            total += parseFloat(inp.value) || 0;
+        });
+        document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
+    }
+
+    function sendInvoice() {
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Sending...';
+        setTimeout(function() {
+            showToast('✓ Invoice SB2026-3 sent to suenotton99@gmail.com', 'success');
+            btn.disabled = false;
+            btn.innerHTML = 'Generate & Send Invoice';
+        }, 1500);
+    }
+
+    function downloadOnly() {
+        showToast('PDF preview would open in a new tab', 'success');
+    }
+
+    function openSettings() {
+        document.getElementById('settingsModal').classList.add('show');
+    }
+
+    function closeSettings() {
+        document.getElementById('settingsModal').classList.remove('show');
+    }
+
+    function saveSettings() {
+        showToast('Settings saved', 'success');
+        closeSettings();
+    }
+
+    function showToast(msg, type) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(function() { toast.classList.remove('show'); }, 4000);
+    }
+
+    renderRecipients();
+    addServiceRow();
+</script>
+</body>
+</html>
